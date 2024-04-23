@@ -1,7 +1,8 @@
-aiogram~=3.0
+aiogram>=3.0
 environs~=9.0
-redis
-betterlogging
+aiomysql~=0.1
+Django~=4.1
+mysqlclient~=2.1
 
 # # For enabling api:
 # backoff
