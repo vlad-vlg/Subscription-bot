@@ -1,0 +1,4 @@
+environs~=9.0
+Django~=4.1
+mysqlclient~=2.1
+

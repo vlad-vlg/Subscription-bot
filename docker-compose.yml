@@ -1,18 +1,47 @@
 version: '3.3'
 
 services:
+  db:
+    image: mysql
+    restart: always
+    stop_signal: SIGINT
+    cap_add:
+      - SYS_NICE
+    command: -- default-authentication-plugin=mysql_native_password
+    env_file:
+      - ".env"
+    environment:
+      - MYSQL_ROOT_HOST=%
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./db:/var/lib/mysql
+    networks:
+      - tg_bot
+
   bot:
-    image: "bot"
+    image: "${BOT_IMAGE_NAME:-tg_bot-image}"
+    container_name: "${BOT_CONTAINER_NAME:-tg_bot-container}"
     stop_signal: SIGINT
     build:
       context: .
-    working_dir: "/usr/src/app/bot"
+    working_dir: "/usr/src/app/${BOT_NAME:-tg_bot}"
     volumes:
-      - .:/usr/src/app/bot
+      - .:/usr/src/app/"${BOT_NAME:-tg_bot}"
     command: python3 -m bot
     restart: always
     env_file:
       - ".env"
+    networks:
+      - tg_bot
+    depends_on:
+      db:
+        condition: service_healthy
 
     logging:
       driver: "json-file"
@@ -20,8 +49,27 @@ services:
         max-size: "200k"
         max-file: "10"
 
+  web_admin:
+    image: "${WEB_ADMIN_IMAGE_NAME:-web_admin-image}"
+    container_name: "${WEB_ADMIN_CONTAINER_NAME:-web_admin-container}"
+    stop_signal: SIGINT
+    build:
+      context: ./web_admin
+    working_dir: "/usr/src/app/web_admin"
+    volumes:
+      - ./web_admin:/usr/src/app/web_admin
+    command: python manager.py runserver 0.0.0.0:8000
+    restart: always
+    ports:
+      - '8000:8000'
+    env_file:
+      - ".env"
+    networks:
+      - tg_bot
+    depends_on:
+      db
 
-  ##   To enable postgres uncomment the following lines
+    ##   To enable postgres uncomment the following lines
   #  http://pgconfigurator.cybertec.at/ For Postgres Configuration
   # pg_database:
   #  image: postgres:13-alpine
