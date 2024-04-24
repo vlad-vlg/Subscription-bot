@@ -67,7 +67,12 @@ services:
     networks:
       - tg_bot
     depends_on:
-      db
+      db:
+        condition: service_healthy
+
+networks:
+  tg_bot:
+    driver: bridge
 
     ##   To enable postgres uncomment the following lines
   #  http://pgconfigurator.cybertec.at/ For Postgres Configuration

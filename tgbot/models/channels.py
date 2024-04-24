@@ -3,10 +3,9 @@ from datetime import datetime
 
 
 @dataclass
-class Users:
-    user_id: int
-    full_name: str
+class Channels:
+    channel_id: int
+    channel_name: str
+    channel_invite_link: str
     created_at: datetime
     updated_at: datetime
-    username: str = None
-    
