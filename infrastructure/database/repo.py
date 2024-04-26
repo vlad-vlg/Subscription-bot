@@ -1,4 +1,5 @@
 import abc
+import logging
 from dataclasses import asdict
 import aiomysql
 from tgbot.models.channels import Channels
@@ -108,7 +109,10 @@ class MYSQLRepository(DatabaseRepository):
             values = ', '.join(['%s'] * len(user_subscription_data))
             query = f'INSERT INTO user_subscriptions ({columns}) VALUES ({values})'
             await cursor.execute(query, tuple(user_subscription_data.values()))
+            user_sub_id = cursor.lastrowid
+            logging.info(f'New User_subscription_id: {user_sub_id}')
         await self.conn.commit()
+        return user_sub_id
 
     async def update_user_subscription_by_id(self, user_subscription_id: int, paid: bool):
         async with self.conn.cursor(aiomysql.DictCursor) as cursor:

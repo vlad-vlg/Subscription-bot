@@ -37,5 +37,5 @@ class PaymentProvider(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def check_payment(self, payment_id: str):
+    async def check_payment(self, payment_id: str) -> bool:
         raise NotImplementedError
