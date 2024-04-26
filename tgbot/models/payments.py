@@ -12,12 +12,11 @@ class Payments:
     usd_amount: float
     pay_amount: float
     currency: str
-    pay_address:str
+    pay_address: str
     paid: bool
     created_at: datetime
     updated_at: datetime
     comment: str = None
-
 
     def update_payment(self, new_status: bool):
         if new_status:
@@ -40,4 +39,3 @@ class PaymentProvider(abc.ABC):
     @abc.abstractmethod
     async def check_payment(self, payment_id: str):
         raise NotImplementedError
-

@@ -84,20 +84,20 @@ class MYSQLRepository(DatabaseRepository):
 
     async def get_subscription_by_id(self, subscription_id: int) -> Subscriptions:
         async with self.conn.cursor(aiomysql.DictCursor) as cursor:
-            await cursor.execute('SELECT * FROM subscriptions WHERE id = %s', (subscription_id, ))
+            await cursor.execute('SELECT * FROM subscriptions WHERE id = %s', (subscription_id,))
             subscription_data = await cursor.fetchone()
             return Subscriptions(**subscription_data)
 
     async def get_current_subscription_by_user_id(self, user_id: int) -> dict:
         async with self.conn.cursor(aiomysql.DictCursor) as cursor:
             await cursor.execute('SELECT * FROM Subscriptions '
-                                  'JOIN user_subscriptions '
-                                  'ON Subscriptions.subscription_id = user_subscriptions.subscription_id '
-                                  'WHERE user_id = %s '
-                                  'AND paid = 1 '
-                                  'AND subscription_end_date > NOW() '
-                                  'AND subscription_start_date < NOW()',
-                                  (user_id,))
+                                 'JOIN user_subscriptions '
+                                 'ON Subscriptions.subscription_id = user_subscriptions.subscription_id '
+                                 'WHERE user_id = %s '
+                                 'AND paid = 1 '
+                                 'AND subscription_end_date > NOW() '
+                                 'AND subscription_start_date < NOW()',
+                                 (user_id,))
             user_subscription_data = await cursor.fetchone()
             return user_subscription_data
 
