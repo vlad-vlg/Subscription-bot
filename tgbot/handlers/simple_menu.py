@@ -12,7 +12,7 @@ menu_router = Router()
 
 @menu_router.message(Command("menu"))
 async def show_menu(message: Message):
-    await message.answer("Виберіть пункт меню:", reply_markup=simple_menu_keyboard())
+    await message.answer("Выберите пункт меню:", reply_markup=simple_menu_keyboard())
 
 
 # We can use F.data filter to filter callback queries by data field from CallbackQuery object
@@ -23,10 +23,10 @@ async def create_order(query: CallbackQuery):
 
     # This method will send an answer to the message with the button, that user pressed
     # Here query - is a CallbackQuery object, which contains message: Message object
-    await query.message.answer("Ви обрали створення замовлення!")
+    await query.message.answer("Ви выбрали створення замовлення!")
 
     # You can also Edit the message with a new text
-    # await query.message.edit_text("Ви обрали створення замовлення!")
+    # await query.message.edit_text("Ви выбрали створення замовлення!")
 
 
 # Let's create a simple list of orders for demonstration purposes
@@ -40,7 +40,7 @@ ORDERS = [
 @menu_router.callback_query(F.data == "my_orders")
 async def my_orders(query: CallbackQuery):
     await query.answer()
-    await query.message.edit_text("Ви обрали перегляд ваших замовлень!",
+    await query.message.edit_text("Ви выбрали просмотр ваших замовлень!",
                                   reply_markup=my_orders_keyboard(ORDERS))
 
 
@@ -75,4 +75,4 @@ async def show_order(query: CallbackQuery, callback_data: OrderCallbackData):
         # You can also use MarkdownV2:
         # await query.message.edit_text(text.as_markdown(), parse_mode=ParseMode.MARKDOWN_V2)
     else:
-        await query.message.edit_text("Замовлення не знайдено!")
+        await query.message.edit_text("Замовлення не найдено!")

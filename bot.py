@@ -13,10 +13,10 @@ from tgbot.services import broadcaster
 
 
 async def on_startup(bot: Bot, admin_ids: list[int]):
-    await broadcaster.broadcast(bot, admin_ids, "Бот був запущений")
+    await broadcaster.broadcast(bot, admin_ids, "Бот запущен")
 
 
-def register_global_middlewares(dp: Dispatcher, config: Config, session_pool=None):
+def register_global_middlewares(dp: Dispatcher, config: Config, aiomysql_pool):
     """
     Register global middlewares for the given dispatcher.
     Global middlewares here are the ones that are applied to all the handlers (you specify the type of update)
@@ -35,6 +35,15 @@ def register_global_middlewares(dp: Dispatcher, config: Config, session_pool=Non
     for middleware_type in middleware_types:
         dp.message.outer_middleware(middleware_type)
         dp.callback_query.outer_middleware(middleware_type)
+
+    db_middleware = MYSQLDatabaseMiddleware(
+        aiomysql_pool=aiomysql_pool
+    )
+    dp.message.middleware(db_middleware)
+    dp.callback_query.middleware(db_middleware)
+    dp.chat_member.middleware(db_middleware)
+    dp.my_chat_member.middleware(db_middleware)
+    dp.channel_post.middleware(db_middleware)
 
 
 def setup_logging():
@@ -91,10 +100,26 @@ async def main():
 
     bot = Bot(token=config.tg_bot.token, parse_mode="HTML")
     dp = Dispatcher(storage=storage)
+    aiomysql_pool = await aiomysql.create_pool(
+        host=config.db.host,
+        port=config.db.port,
+        user=config.db.user,
+        password=config.db.password,
+        db=config.db.database,
+        autocommit=True
+    )
+    nowpayments = NowPaymentsProvider(
+        api=NowPaymentsAPI(
+            api_key=config.misc.payments_api_key
+        )
+    )
 
     dp.include_routers(*routers_list)
 
-    register_global_middlewares(dp, config)
+    register_global_middlewares(dp, config, aiomysql_pool)
+    dp.workflow_data.update(
+        nowpayments=nowpayments
+    )
 
     await on_startup(bot, config.tg_bot.admin_ids)
     await dp.start_polling(bot)
@@ -104,4 +129,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logging.error("Бот був вимкнений!")
+        logging.error("Бот был выключен!")

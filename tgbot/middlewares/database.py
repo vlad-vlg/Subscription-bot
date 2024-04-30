@@ -1,14 +1,13 @@
 from typing import Callable, Dict, Any, Awaitable
-
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
-from infrastructure.database.repo.requests import RequestsRepo
+from infrastructure.database.repo import MYSQLRepository
 
 
-class DatabaseMiddleware(BaseMiddleware):
-    def __init__(self, session_pool) -> None:
-        self.session_pool = session_pool
+class MYSQLDatabaseMiddleware(BaseMiddleware):
+    def __init__(self, aiomysql_pool) -> None:
+        self.aio_pool = aiomysql_pool
 
     async def __call__(
         self,
@@ -16,19 +15,14 @@ class DatabaseMiddleware(BaseMiddleware):
         event: Message,
         data: Dict[str, Any],
     ) -> Any:
-        async with self.session_pool() as session:
-            repo = RequestsRepo(session)
-
-            user = await repo.users.get_or_create_user(
-                event.from_user.id,
-                event.from_user.full_name,
-                event.from_user.language_code,
-                event.from_user.username
-            )
-
-            data["session"] = session
-            data["repo"] = repo
-            data["user"] = user
+        async with self.aio_pool.acquire() as conn:
+            db_repo = MYSQLRepository(conn)
+            data['conn'] = conn
+            data['db_repo'] = db_repo
+            effective_user = data.get('event_from_user')
+            if effective_user:
+                db_user = db_repo.get_user_by_id(effective_user.id)
+                data['db_user'] = db_user
 
             result = await handler(event, data)
         return result

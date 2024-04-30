@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Optional
-
 from environs import Env
 
 
@@ -28,40 +27,18 @@ class DbConfig:
     password: str
     user: str
     database: str
-    port: int = 5432
-
-    # For SQLAlchemy
-    def construct_sqlalchemy_url(self, driver="asyncpg", host=None, port=None) -> str:
-        """
-        Constructs and returns a SQLAlchemy URL for this database configuration.
-        """
-        # TODO: If you're using SQLAlchemy, move the import to the top of the file!
-        from sqlalchemy.engine.url import URL
-
-        if not host:
-            host = self.host
-        if not port:
-            port = self.port
-        uri = URL.create(
-            drivername=f"postgresql+{driver}",
-            username=self.user,
-            password=self.password,
-            host=host,
-            port=port,
-            database=self.database,
-        )
-        return uri.render_as_string(hide_password=False)
+    port: int = 3306
 
     @staticmethod
     def from_env(env: Env):
         """
         Creates the DbConfig object from environment variables.
         """
-        host = env.str("DB_HOST")
-        password = env.str("POSTGRES_PASSWORD")
-        user = env.str("POSTGRES_USER")
-        database = env.str("POSTGRES_DB")
-        port = env.int("DB_PORT", 5432)
+        host = env.str("MYSQL_HOST")
+        password = env.str("MYSQL_ROOT_PASSWORD")
+        user = env.str("MYSQL_USER")
+        database = env.str("MYSQL_DATABASE")
+        port = env.int("MYSQL_PORT", 3306)
         return DbConfig(
             host=host, password=password, user=user, database=database, port=port
         )
@@ -143,7 +120,8 @@ class Miscellaneous:
     other_params : str, optional
         A string used to hold other various parameters as required (default is None).
     """
-
+    payments_api_key: str
+    support_url: str
     other_params: str = None
 
 
@@ -187,7 +165,10 @@ def load_config(path: str = None) -> Config:
 
     return Config(
         tg_bot=TgBot.from_env(env),
-        # db=DbConfig.from_env(env),
+        db=DbConfig.from_env(env),
         # redis=RedisConfig.from_env(env),
-        misc=Miscellaneous(),
+        misc=Miscellaneous(
+            payments_api_key=env.str('NOWPAYMENTS_API_KEY'),
+            support_url=env.str('SUPPORT_URL')
+        )
     )
