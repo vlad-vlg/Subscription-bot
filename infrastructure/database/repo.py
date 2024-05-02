@@ -129,7 +129,7 @@ class MYSQLRepository(DatabaseRepository):
             await cursor.execute(query, tuple(payment_data.values()))
         await self.conn.commit()
 
-    async def get_payment_by_id(self, payment_id: int) -> Payments:
+    async def get_payment_by_id(self, payment_id: str) -> Payments:
         async with self.conn.cursor(aiomysql.DictCursor) as cursor:
             await cursor.execute('SELECT * FROM Payments WHERE payment_id = %s', (payment_id,))
             payment_data = await cursor.fetchone()

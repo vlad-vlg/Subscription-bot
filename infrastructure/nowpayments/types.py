@@ -39,7 +39,7 @@ class NowPayment(BaseModel):
 
 
 class PaymentUpdate(BaseModel):
-    payment_id: int
+    payment_id: str
     invoice_id: Optional[int]
     payment_status: str
     pay_address: str
