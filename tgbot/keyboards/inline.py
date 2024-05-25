@@ -1,73 +1,97 @@
+from enum import IntEnum
 from aiogram.filters.callback_data import CallbackData
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from tgbot.models.channels import Channels
+from tgbot.models.subscriptions import Subscriptions
 
 
-# This is a simple keyboard, that contains 2 buttons
-def very_simple_keyboard():
-    buttons = [
-        [
-            InlineKeyboardButton(text="📝 Створити замовлення",
-                                 callback_data="create_order"),
-            InlineKeyboardButton(text="📋 Мої замовлення", callback_data="my_orders"),
-        ],
-    ]
-
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=buttons,
-    )
-    return keyboard
+class MenuLevels(IntEnum):
+    MAIN_MENU = 1
+    SUBSCRIPTION_SELECTION = 2
+    PAYMENT = 3
+    CRYPTO_SELECTION = 4
+    PAYMENT_CONFIRMATION = 5
 
 
-# This is the same keyboard, but created with InlineKeyboardBuilder (preferred way)
-def simple_menu_keyboard():
-    # First, you should create an InlineKeyboardBuilder object
+class MenuKeyboardCD(CallbackData, prefix='main_menu'):
+    level: MenuLevels
+    parameter: str = None
+
+
+def main_menu_keyboard(channels: list[Channels], support_url: str = None):
     keyboard = InlineKeyboardBuilder()
-
-    # You can use keyboard.button() method to add buttons, then enter text and callback_data
     keyboard.button(
-        text="📝 Створити замовлення",
-        callback_data="create_order"
+        text='📊 Подписки',
+        callback_data=MenuKeyboardCD(
+            level=MenuLevels.SUBSCRIPTION_SELECTION,
+        )
     )
-    keyboard.button(
-        text="📋 Мої замовлення",
-        # In this simple example, we use a string as callback_data
-        callback_data="my_orders"
-    )
-
-    # If needed you can use keyboard.adjust() method to change the number of buttons per row
-    # keyboard.adjust(2)
-
-    # Then you should always call keyboard.as_markup() method to get a valid InlineKeyboardMarkup object
+    if channels:
+        for channel in channels:
+            keyboard.button(
+                text=f'🔗 {channel.channel_name}',
+                url=channel.channel_invite_link
+            )
+    if support_url:
+        keyboard.button(
+            text='🔗 Связь с администрацией',
+            url=support_url
+        )
+    keyboard.adjust(2)
     return keyboard.as_markup()
 
 
-# For a more advanced usage of callback_data, you can use the CallbackData factory
-class OrderCallbackData(CallbackData, prefix="order"):
-    """
-    This class represents a CallbackData object for orders.
-
-    - When used in InlineKeyboardMarkup, you have to create an instance of this class, run .pack() method, and pass to callback_data parameter.
-
-    - When used in InlineKeyboardBuilder, you have to create an instance of this class and pass to callback_data parameter (without .pack() method).
-
-    - In handlers you have to import this class and use it as a filter for callback query handlers, and then unpack callback_data parameter to get the data.
-
-    # Example usage in simple_menu.py
-    """
-    order_id: int
-
-
-def my_orders_keyboard(orders: list):
-    # Here we use a list of orders as a parameter (from simple_menu.py)
-
+def subscription_selection_keyboard(subscriptions: list[Subscriptions]):
     keyboard = InlineKeyboardBuilder()
-    for order in orders:
+    for subscription in subscriptions:
         keyboard.button(
-            text=f"📝 {order['title']}",
-            # Here we use an instance of OrderCallbackData class as callback_data parameter
-            # order id is the field in OrderCallbackData class, that we defined above
-            callback_data=OrderCallbackData(order_id=order["id"])
+            text=f'📊 {subscription.subscription_name} - {subscription.subscription_price} $',
+            callback_data=MenuKeyboardCD(
+                level=MenuLevels.PAYMENT,
+                parameter=str(subscription.subscription_id)
+            )
         )
+    keyboard.button(
+        text='↩️ Назад',
+        callback_data=MenuKeyboardCD(level=MenuLevels.MAIN_MENU)
+    )
+    keyboard.adjust(1)
+    return keyboard.as_markup()
 
+
+def crypto_selection_keyboard(currencies: list[str]):
+    keyboard = InlineKeyboardBuilder()
+    for currency in currencies:
+        keyboard.button(
+            text=f'💰 {currency}',
+            callback_data=MenuKeyboardCD(
+                level=MenuLevels.CRYPTO_SELECTION,
+                parameter=currency,
+            )
+        )
+    keyboard.adjust(2)
+    keyboard.button(
+        text='↩️ Назад',
+        callback_data=MenuKeyboardCD(level=MenuLevels.SUBSCRIPTION_SELECTION)
+    )
+    return keyboard.as_markup()
+
+
+def payment_confirmation_keyboard(payment_id: int, subscription_id: int):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(
+        text='✅ Я оплатил',
+        callback_data=MenuKeyboardCD(
+            level=MenuLevels.PAYMENT_CONFIRMATION,
+            parameter=str(payment_id)
+        )
+    )
+    keyboard.button(
+        text='❌ Отмена',
+        callback_data=MenuKeyboardCD(
+            level=MenuLevels.PAYMENT,
+            parameter=str(subscription_id)
+        )
+    )
+    keyboard.adjust(1)
     return keyboard.as_markup()

@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from infrastructure.database.repo import DatabaseRepository, MYSQLRepository
+from infrastructure.database.repo import MYSQLRepository
 from tgbot.models.payments import PaymentProvider, Payments
 from tgbot.models.subscriptions import UserSubscriptions
 

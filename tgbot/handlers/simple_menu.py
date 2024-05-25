@@ -4,7 +4,7 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.formatting import as_section, as_key_value, as_marked_list
 
-from tgbot.keyboards.inline import simple_menu_keyboard, my_orders_keyboard, \
+from tgbot.keyboards.inlines import simple_menu_keyboard, my_orders_keyboard, \
     OrderCallbackData
 
 menu_router = Router()
@@ -23,24 +23,24 @@ async def create_order(query: CallbackQuery):
 
     # This method will send an answer to the message with the button, that user pressed
     # Here query - is a CallbackQuery object, which contains message: Message object
-    await query.message.answer("Ви выбрали створення замовлення!")
+    await query.message.answer("Вы выбрали создать заказ!")
 
     # You can also Edit the message with a new text
-    # await query.message.edit_text("Ви выбрали створення замовлення!")
+    # await query.message.edit_text("Вы выбрали создать заказ!")
 
 
 # Let's create a simple list of orders for demonstration purposes
 ORDERS = [
-    {"id": 1, "title": "Замовлення 1", "status": "Виконується"},
-    {"id": 2, "title": "Замовлення 2", "status": "Виконано"},
-    {"id": 3, "title": "Замовлення 3", "status": "Виконано"},
+    {"id": 1, "title": "Заказ 1", "status": "Выполняется"},
+    {"id": 2, "title": "Заказ 2", "status": "Выполнен"},
+    {"id": 3, "title": "Заказ 3", "status": "Выполнен"},
 ]
 
 
 @menu_router.callback_query(F.data == "my_orders")
 async def my_orders(query: CallbackQuery):
     await query.answer()
-    await query.message.edit_text("Ви выбрали просмотр ваших замовлень!",
+    await query.message.edit_text("Вы выбрали просмотр ваших заказов!",
                                   reply_markup=my_orders_keyboard(ORDERS))
 
 
@@ -59,20 +59,20 @@ async def show_order(query: CallbackQuery, callback_data: OrderCallbackData):
         # Here we use aiogram.utils.formatting to format the text
         # https://docs.aiogram.dev/en/latest/utils/formatting.html
         text = as_section(
-            as_key_value("Замовлення #", order_info["id"]),
+            as_key_value("Заказ #", order_info["id"]),
             as_marked_list(
                 as_key_value("Товар", order_info["title"]),
                 as_key_value("Статус", order_info["status"]),
             ),
         )
         # Example:
-        # Замовлення #: 2
-        # - Товар: Замовлення 2
-        # - Статус: Виконано
+        # Заказ #: 2
+        # - Товар: Заказ 2
+        # - Статус: Выполнен
 
         await query.message.edit_text(text.as_html(), parse_mode=ParseMode.HTML)
 
         # You can also use MarkdownV2:
         # await query.message.edit_text(text.as_markdown(), parse_mode=ParseMode.MARKDOWN_V2)
     else:
-        await query.message.edit_text("Замовлення не найдено!")
+        await query.message.edit_text("Заказ не найден!")
