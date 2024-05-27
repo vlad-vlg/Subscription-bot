@@ -1,17 +1,18 @@
 import datetime
 
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from infrastructure.database.repo import MYSQLRepository
+from infrastructure.nowpayments.api import NowPaymentsAPI
 from infrastructure.nowpayments.types import NowPayment
 from tgbot.config import Config
 from tgbot.keyboards.inline import main_menu_keyboard, MenuKeyboardCD, MenuLevels, subscription_selection_keyboard, \
     crypto_selection_keyboard, payment_confirmation_keyboard
 from tgbot.models.payments import NowPaymentsProvider
 from tgbot.models.users import Users
-from tgbot.services.use_cases import issue_subscription_invoice_to_user
+from tgbot.services.use_cases import issue_subscription_invoice_to_user, activate_subscription_by_payment_id
 
 menu_router = Router()
 
@@ -135,3 +136,38 @@ async def payment_creation(query: CallbackQuery,
     await query.message.edit_text(text, reply_markup=keyboard)
 
 
+@menu_router.callback_query(MenuKeyboardCD.filter(F.level == MenuLevels.PAYMENT_CONFIRMATION))
+async def payment_confirmation(query: CallbackQuery,
+                               db_repo: MYSQLRepository,
+                               callback_data: MenuKeyboardCD,
+                               nowpayments: NowPaymentsProvider,
+                               bot: Bot,
+                               db_user: Users,
+                               config: Config
+                               ):
+    payment_id = callback_data.parameter
+    activation_status = await activate_subscription_by_payment_id(
+        db_repo=db_repo,
+        payment_provider=nowpayments,
+        payment_id=payment_id,
+    )
+    if activation_status is True:
+        text = 'Платеж подтвержден, спасибо! Вы успешно активировали подписку!'
+        await query.message.edit_text(text)
+        # channels = await db_repo.get_channels()
+        # await query.message.edit_text(text, reply_markup=main_menu_keyboard(
+        #     channels=channels,
+        # ))
+        # for channel in channels:
+        #     await bot.unban_chat_member(
+        #         chat_id=channel.channel_id,
+        #         user_id=query.from_user.id,
+        #         only_if_banned=True,
+        #     )
+        text, keyboard = await starting_message(db_repo, db_user, config)
+        await query.message.answer(text, reply_markup=keyboard)
+        return
+    else:
+        # await query.answer(f'Платеж {payment_id} еще не подтвержден. Пожалуйста, подождите.', show_alert=True)
+        await query.message.edit_text('Платеж не подтвержден. Попробуйте еще раз позже.')
+    
