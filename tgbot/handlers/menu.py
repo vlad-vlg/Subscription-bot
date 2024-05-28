@@ -5,7 +5,6 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from infrastructure.database.repo import MYSQLRepository
-from infrastructure.nowpayments.api import NowPaymentsAPI
 from infrastructure.nowpayments.types import NowPayment
 from tgbot.config import Config
 from tgbot.keyboards.inline import main_menu_keyboard, MenuKeyboardCD, MenuLevels, subscription_selection_keyboard, \
@@ -154,20 +153,20 @@ async def payment_confirmation(query: CallbackQuery,
     if activation_status is True:
         text = 'Платеж подтвержден, спасибо! Вы успешно активировали подписку!'
         await query.message.edit_text(text)
-        # channels = await db_repo.get_channels()
         # await query.message.edit_text(text, reply_markup=main_menu_keyboard(
         #     channels=channels,
         # ))
-        # for channel in channels:
-        #     await bot.unban_chat_member(
-        #         chat_id=channel.channel_id,
-        #         user_id=query.from_user.id,
-        #         only_if_banned=True,
-        #     )
+
         text, keyboard = await starting_message(db_repo, db_user, config)
         await query.message.answer(text, reply_markup=keyboard)
+        channels = await db_repo.get_all_channels()
+        for channel in channels:
+            await bot.unban_chat_member(
+                chat_id=channel.channel_id,
+                user_id=query.from_user.id,
+                only_if_banned=True
+            )
         return
     else:
         # await query.answer(f'Платеж {payment_id} еще не подтвержден. Пожалуйста, подождите.', show_alert=True)
         await query.message.edit_text('Платеж не подтвержден. Попробуйте еще раз позже.')
-    

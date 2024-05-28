@@ -122,7 +122,9 @@ async def main():
     )
 
     await on_startup(bot, config.tg_bot.admin_ids)
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, allowed_updates=[
+        "message", "callback_query", "my_chat_member", "chat_member"
+    ])
 
 
 if __name__ == "__main__":

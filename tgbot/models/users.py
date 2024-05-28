@@ -9,4 +9,4 @@ class Users:
     created_at: datetime
     updated_at: datetime
     username: str = None
-    
+    is_active: bool = False
